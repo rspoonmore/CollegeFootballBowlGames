@@ -2,7 +2,7 @@ import pandas as pd
 
 def createBowlExcel(excelFileName):
     rawResults = pd.read_excel('Results.xlsx')
-    rawConferences = pd.read_excel('conferences.xlsx')
+    rawConferences = pd.read_excel('conferences.xlsx', sheet_name='Sheet1')
     results = rawResults.copy()
     conferences = rawConferences.copy().groupby('Year')['Conference'].value_counts().to_frame().rename(columns={'Conference': 'Teams'})
     divisions = rawConferences.copy().groupby(['Year', 'Conference'])['Division'].value_counts().to_frame().rename(columns={'Division': 'Teams'})
@@ -32,17 +32,24 @@ def createBowlExcel(excelFileName):
     results.insert(7, 'Point Diff', results['Team Points'] - results['Opponent Points'])
 
     # Create DF of conference and dvision placement and Win percentage and add to describes
-    conferenceResults = results.groupby(['Year', 'Team Conference']).agg({'Bowl Game': 'count', 'Win': 'sum'}).rename(columns={'Bowl Game': 'Bowl Teams', 'Win':'Wins'})
+    conferencePlacement = results.loc[:, ['Year', 'Team Conference', 'School']].drop_duplicates().groupby(['Year', 'Team Conference']).count().rename(columns={'School': 'Bowl Teams'})
+    conferencePlacement.index = conferencePlacement.index.rename(('Year', 'Conference'))
+    conferenceResults = results.groupby(['Year', 'Team Conference']).agg({'Bowl Game': 'count', 'Win': 'sum'}).rename(columns={'Bowl Game': 'Bowl Games', 'Win':'Wins'})
     conferenceResults.index = conferenceResults.index.rename(('Year', 'Conference'))
-    conferences[['Bowl Teams', 'Wins']] = conferences.merge(conferenceResults, how='inner', left_index=True, right_index=True).loc[:, ['Bowl Teams', 'Wins']]
+    conferences['Bowl Teams'] = conferences.merge(conferencePlacement, how='inner', left_index=True, right_index=True).loc[:, 'Bowl Teams']
+    conferences[['Bowl Games', 'Wins']] = conferences.merge(conferenceResults, how='inner', left_index=True, right_index=True).loc[:, ['Bowl Games', 'Wins']]
     conferences['Placement %'] = conferences['Bowl Teams'] / conferences['Teams']
-    conferences['Win %'] = conferences['Wins'] / conferences['Bowl Teams']
+    conferences['Win %'] = conferences['Wins'] / conferences['Bowl Games']
     conferences = conferences.merge(conferenceDescribe, how='left', left_index=True, right_index=True)
-    divisionResults = results.groupby(['Year', 'Team Conference', 'Team Division']).agg({'Bowl Game': 'count', 'Win': 'sum'}).rename(columns={'Bowl Game': 'Bowl Teams', 'Win':'Wins'})
+
+    divisionPlacement = results.loc[:, ['Year', 'Team Conference', 'Team Division', 'School']].drop_duplicates().groupby(['Year', 'Team Conference', 'Team Division']).count().rename(columns={'School': 'Bowl Teams'})
+    divisionPlacement.index = divisionPlacement.index.rename(['Year', 'Conference', 'Division'])
+    divisionResults = results.groupby(['Year', 'Team Conference', 'Team Division']).agg({'Bowl Game': 'count', 'Win': 'sum'}).rename(columns={'Bowl Game': 'Bowl Games', 'Win':'Wins'})
     divisionResults.index = divisionResults.index.rename(['Year', 'Conference', 'Division'])
-    divisions[['Bowl Teams', 'Wins']] = divisions.merge(divisionResults, how='inner', left_index=True, right_index=True).loc[:, ['Bowl Teams', 'Wins']]
+    divisions['Bowl Teams'] = divisions.merge(divisionPlacement, how='inner', left_index=True, right_index=True).loc[:, 'Bowl Teams']
+    divisions[['Bowl Games', 'Wins']] = divisions.merge(divisionResults, how='inner', left_index=True, right_index=True).loc[:, ['Bowl Teams', 'Wins']]
     divisions['Placement %'] = divisions['Bowl Teams'] / divisions['Teams']
-    divisions['Win %'] = divisions['Wins'] / divisions['Bowl Teams']
+    divisions['Win %'] = divisions['Wins'] / divisions['Bowl Games']
     divisions = divisions.merge(divisionDescribe, how='left', left_index=True, right_index=True)
 
     # Save DFs to excel
