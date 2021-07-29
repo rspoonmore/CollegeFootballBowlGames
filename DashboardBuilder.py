@@ -112,7 +112,7 @@ def createDashboard(results, conferences, divisions, plotStyle, dashboardFileNam
     conferencePlacePercByYear = pd.pivot_table(conferences, values=['Placement %'], index=['Conference'], columns=['Year']).apply(lambda x: 100 * x).round(2)
     conferencePlacePercByYear.columns = conferencePlacePercByYear.columns.get_level_values('Year')
 
-    sb.heatmap(data=conferencePlacePercByYear, annot=True, fmt='g', ax=ax8, cmap='RdYlGn', vmin=0, vmax=100)
+    sb.heatmap(data=conferencePlacePercByYear, annot=True, fmt='g', ax=ax8, cmap='RdYlGn')
     ax8.set_title('Placement Percentage by Conference Each Year')
 
 
