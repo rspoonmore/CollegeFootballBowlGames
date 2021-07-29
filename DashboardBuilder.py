@@ -19,7 +19,7 @@ def findQuad(row):
 # conferences = pd.read_excel('College Football Bowl Game Analysis.xlsx', sheet_name='Conference Results', index_col=[0, 1]).reset_index(['Year', 'Conference'])
 # divisions = pd.read_excel('College Football Bowl Game Analysis.xlsx', sheet_name='Division Results', index_col=[0, 1, 2]).reset_index(['Year', 'Conference', 'Division'])
 
-def createDashboard(results, conferences, divisions, plotStyle):
+def createDashboard(results, conferences, divisions, plotStyle, dashboardFileName):
     plt.style.use(plotStyle)
 
     conferences.reset_index(['Year', 'Conference'], inplace=True)
@@ -126,4 +126,4 @@ def createDashboard(results, conferences, divisions, plotStyle):
     plt.suptitle('College Footbal Bowl Game Analysis Dashboard', fontsize=50)
     # Add some space between subplots
     plt.subplots_adjust(wspace=.3)
-    plt.savefig('College Football Bowl Game Analysis Dashboard.pdf')
+    plt.savefig(dashboardFileName)

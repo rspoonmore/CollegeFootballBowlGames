@@ -1,8 +1,8 @@
 import pandas as pd
 
 def createBowlExcel(excelFileName):
-    rawResults = pd.read_excel('Results.xlsx')
-    rawConferences = pd.read_excel('conferences.xlsx', sheet_name='Sheet1')
+    rawResults = pd.read_excel("Data Files/Results.xlsx")
+    rawConferences = pd.read_excel("Data Files/conferences.xlsx", sheet_name="Sheet1")
     results = rawResults.copy()
     conferences = rawConferences.copy().groupby('Year')['Conference'].value_counts().to_frame().rename(columns={'Conference': 'Teams'})
     divisions = rawConferences.copy().groupby(['Year', 'Conference'])['Division'].value_counts().to_frame().rename(columns={'Division': 'Teams'})
