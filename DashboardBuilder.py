@@ -15,9 +15,7 @@ def findQuad(row):
         return 'Both Negative'
 
 
-# results = pd.read_excel('College Football Bowl Game Analysis.xlsx', sheet_name='Game Results')
-# conferences = pd.read_excel('College Football Bowl Game Analysis.xlsx', sheet_name='Conference Results', index_col=[0, 1]).reset_index(['Year', 'Conference'])
-# divisions = pd.read_excel('College Football Bowl Game Analysis.xlsx', sheet_name='Division Results', index_col=[0, 1, 2]).reset_index(['Year', 'Conference', 'Division'])
+
 
 def createDashboard(results, conferences, divisions, plotStyle, dashboardFileName):
     plt.style.use(plotStyle)
@@ -127,3 +125,26 @@ def createDashboard(results, conferences, divisions, plotStyle, dashboardFileNam
     # Add some space between subplots
     plt.subplots_adjust(wspace=.3)
     plt.savefig(dashboardFileName)
+
+
+results = pd.read_excel("Generated Files/College Football Bowl Game Analysis.xlsx", sheet_name='Game Results')
+conferences = pd.read_excel("Generated Files/College Football Bowl Game Analysis.xlsx", sheet_name='Conference Results', index_col=[0, 1]).reset_index(['Year', 'Conference'])
+divisions = pd.read_excel("Generated Files/College Football Bowl Game Analysis.xlsx", sheet_name='Division Results', index_col=[0, 1, 2]).reset_index(['Year', 'Conference', 'Division'])
+
+divisions['Conference and Division'] = divisions.apply(lambda row: row['Conference'] if row['Conference'].lower() == row['Division'].lower() else '{} {}'.format(row['Conference'], row['Division']), axis=1)
+pFiveDivisions = divisions[divisions['Power Five'] == 'Power Five'] 
+
+fig = plt.figure()
+ax1 = fig.add_subplot(121)
+sb.barplot(data=pFiveDivisions, x='Year', y='Wins', hue='Conference and Division', ax=ax1, palette=sb.color_palette())
+ax1.legend(fontsize='small', ncol=3)
+
+
+ax2 = fig.add_subplot(122)
+sb.barplot(data=pFiveDivisions, x='Conference and Division', y='Wins', hue='Year', ax=ax2, palette=sb.color_palette())
+ax2.legend(fontsize='small', ncol=3)
+for label in ax2.get_xticklabels():
+    label.set_rotation(45)
+    label.set_horizontalalignment('right')
+plt.show()
+
