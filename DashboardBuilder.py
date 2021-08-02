@@ -17,15 +17,22 @@ def findQuad(row):
 
 
 
-def createDashboard(results, conferences, divisions, plotStyle, dashboardFileName):
+def createDashboard(results, conferences, divisions, plotStyle, dashboardFileNames):
     plt.style.use(plotStyle)
 
     conferences.reset_index(['Year', 'Conference'], inplace=True)
     divisions.reset_index(['Year', 'Conference', 'Division'], inplace=True)
     results['Result'] = results['Win'].apply(lambda x: 'Win' if x else 'Lose')
+    results['Difference in Points'] = results['Team Points'] - results['Opponent Points']
     results['Difference in Rushing Yards'] = results['Team Rush'] - results['Opponent Rush']
     results['Difference in Passing Yards'] = results['Team Pass'] - results['Opponent Pass']
     results['Yardage Difference Quadrant'] = results.apply(lambda row: findQuad(row), axis=1)
+    results['Conference and Division'] = results.apply(lambda row: row['Team Conference'] if row['Team Conference'].lower() == row['Team Division'].lower() else '{} {}'.format(row['Team Conference'], row['Team Division']), axis=1)
+    divisions['Conference and Division'] = divisions.apply(lambda row: row['Conference'] if row['Conference'].lower() == row['Division'].lower() else '{} {}'.format(row['Conference'], row['Division']), axis=1)
+    divisions['Year and Division'] = divisions['Year'].astype('str') + ' ' + divisions['Conference and Division']
+    pFiveDivisions = divisions[divisions['Power Five'] == 'Power Five']
+    pFiveWinPerc = pFiveDivisions.sort_values('Win %', ascending=False, ignore_index=True)
+    pFiveWinPerc['Win Percentage Threshold'] = pFiveWinPerc['Win %'].apply(lambda x: 'Above 50%' if x >= .5 else 'Below 50%')
     QuadResults = results.groupby('Yardage Difference Quadrant').agg({'Bowl Game': 'count', 'Win': 'sum'})
     QuadResults['Win %'] = QuadResults['Win'] / QuadResults['Bowl Game']
 
@@ -121,30 +128,65 @@ def createDashboard(results, conferences, divisions, plotStyle, dashboardFileNam
     ax9.legend(fontsize='small')
 
 
-    plt.suptitle('College Footbal Bowl Game Analysis Dashboard', fontsize=50)
+    plt.suptitle('High Level College Footbal Bowl Game Analysis Dashboard', fontsize=50)
     # Add some space between subplots
     plt.subplots_adjust(wspace=.3)
-    plt.savefig(dashboardFileName)
+    # Save first Dashboard
+    plt.savefig(dashboardFileNames[0])
+
+    # Start Next Dashboard
+    fig = plt.figure(figsize=(35, 20))
+    gs = GridSpec(3, 2, figure=fig)
+    ax1 = fig.add_subplot(gs[:, 0])
+    ax2 = fig.add_subplot(gs[0, 1:])
+    ax3 = fig.add_subplot(gs[1, 1:])
+    ax4 = fig.add_subplot(gs[2, 1:])
+
+    # Win % of each division-year
+    sb.barplot(data=pFiveWinPerc, x=100 * pFiveWinPerc['Win %'], y=pFiveWinPerc['Year and Division'], ax=ax1, palette=sb.color_palette())
+    ax1.set_ylabel('Year Conference and Division')
+    ax1.set_title('Win Percentage of Divisions (Power Five)')
+
+    # Number of wins by year by division
+    sb.barplot(data=pFiveDivisions, x='Year', y='Wins', hue='Conference and Division', ax=ax2, palette=sb.color_palette())
+    ax2.legend(fontsize='x-small', ncol=4)
+    ax2.set_title('Number of Wins Each Year by Division (Power Five)')
 
 
-results = pd.read_excel("Generated Files/College Football Bowl Game Analysis.xlsx", sheet_name='Game Results')
-conferences = pd.read_excel("Generated Files/College Football Bowl Game Analysis.xlsx", sheet_name='Conference Results', index_col=[0, 1]).reset_index(['Year', 'Conference'])
-divisions = pd.read_excel("Generated Files/College Football Bowl Game Analysis.xlsx", sheet_name='Division Results', index_col=[0, 1, 2]).reset_index(['Year', 'Conference', 'Division'])
+    # sb.barplot(data=pFiveDivisions, x='Conference and Division', y='Wins', hue='Year', ax=ax3, palette=sb.color_palette())
+    # ax3.legend(fontsize='small', ncol=3)
+    # for label in ax3.get_xticklabels():
+    #     label.set_rotation(45)
+    #     label.set_horizontalalignment('right')
 
-divisions['Conference and Division'] = divisions.apply(lambda row: row['Conference'] if row['Conference'].lower() == row['Division'].lower() else '{} {}'.format(row['Conference'], row['Division']), axis=1)
-pFiveDivisions = divisions[divisions['Power Five'] == 'Power Five'] 
+    # Difference in Pass vs Rush Yards Scatter
+    sb.scatterplot(x=PFiveResults['Difference in Rushing Yards'], y=PFiveResults['Difference in Passing Yards'], hue=PFiveResults['Conference and Division'], ax=ax3, style=PFiveResults['Result'], s=150)
+    ax3.legend(fontsize='x-small')
+    ax3_copy = ax3.twinx()
+    ax3.set_xlim(lowerLimit, upperLimit)
+    ax3.set_ylim(lowerLimit, upperLimit)
+    ax3_copy.set_xlim(lowerLimit, upperLimit)
+    ax3_copy.set_ylim(lowerLimit, upperLimit)
+    ax3.set_title('Difference in Rushing Yards vs Difference in Passing Yards By Division (Power Five)')
+    lineBase = np.linspace(lowerLimit, upperLimit, 10)
 
-fig = plt.figure()
-ax1 = fig.add_subplot(121)
-sb.barplot(data=pFiveDivisions, x='Year', y='Wins', hue='Conference and Division', ax=ax1, palette=sb.color_palette())
-ax1.legend(fontsize='small', ncol=3)
+    ax3_copy.plot(lineBase, [0] * len(lineBase), 'k--')
+    ax3_copy.plot([0] * len(lineBase), lineBase, 'k--')
+    ax3_copy.set_yticks([])
 
+    # Points difference Boxplot
+    ax4.grid(True, which='major', axis='y', alpha=0.5)
+    sb.boxplot(data=PFiveResults, x='Year', y='Difference in Points', hue='Conference and Division', ax=ax4, palette=sb.color_palette())
+    handles, labels = ax4.get_legend_handles_labels()
+    sb.stripplot(data=PFiveResults, x='Year', y='Difference in Points', dodge=True, hue='Conference and Division', color='black', linewidth=0, ax=ax4)
+    ax4.set_title('Difference in Points Scored by Division Each Year (Power Five)')
+    ax4.legend(handles, labels, fontsize='x-small')
+    
 
-ax2 = fig.add_subplot(122)
-sb.barplot(data=pFiveDivisions, x='Conference and Division', y='Wins', hue='Year', ax=ax2, palette=sb.color_palette())
-ax2.legend(fontsize='small', ncol=3)
-for label in ax2.get_xticklabels():
-    label.set_rotation(45)
-    label.set_horizontalalignment('right')
-plt.show()
+    plt.suptitle('Division Level College Footbal Bowl Game Analysis Dashboard', fontsize=50)
+    # Add some space between subplots
+    # plt.subplots_adjust(wspace=.3)
+    # Save first Dashboard
+    plt.savefig(dashboardFileNames[1])
+
 
