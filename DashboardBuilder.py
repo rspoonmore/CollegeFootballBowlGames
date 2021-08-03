@@ -80,17 +80,17 @@ def createDashboard(results, conferences, divisions, plotStyle, dashboardFileNam
     # ax2.legend(loc='upper left')
 
     # Rush Yards Box
-    sb.boxplot(data=PFiveResults[PFiveResults['Year'] > 2018], x='Year', y='Team Rush', hue='Team Conference', ax=ax3)
+    sb.boxplot(data=PFiveResults, x='Year', y='Team Rush', hue='Team Conference', ax=ax3)
     handles, labels = ax3.get_legend_handles_labels()
-    sb.stripplot(data=PFiveResults[PFiveResults['Year'] > 2018], x='Year', y='Team Rush', dodge=True, hue='Team Conference', color='black', linewidth=0, ax=ax3)
+    sb.stripplot(data=PFiveResults, x='Year', y='Team Rush', dodge=True, hue='Team Conference', color='black', linewidth=0, ax=ax3)
     ax3.set_title('Rushing Yards by Conference Each Year (Power Five)')
     ax3.legend(handles, labels)
     # ax2.legend(loc='upper left')
 
     # Pass Yards Box
-    sb.boxplot(data=PFiveResults[PFiveResults['Year'] > 2018], x='Year', y='Team Pass', hue='Team Conference', ax=ax4)
+    sb.boxplot(data=PFiveResults, x='Year', y='Team Pass', hue='Team Conference', ax=ax4)
     handles, labels = ax4.get_legend_handles_labels()
-    sb.stripplot(data=PFiveResults[PFiveResults['Year'] > 2018], x='Year', y='Team Pass', dodge=True, hue='Team Conference', color='black', linewidth=0, ax=ax4)
+    sb.stripplot(data=PFiveResults, x='Year', y='Team Pass', dodge=True, hue='Team Conference', color='black', linewidth=0, ax=ax4)
     ax4.set_title('Passing Yards by Conference Each Year (Power Five)')
     ax4.legend(handles, labels)
     # ax2.legend(loc='upper left')
@@ -143,9 +143,11 @@ def createDashboard(results, conferences, divisions, plotStyle, dashboardFileNam
     ax4 = fig.add_subplot(gs[2, 1:])
 
     # Win % of each division-year
+    ax1.grid(True, which='both', axis='x', alpha=0.5)
     sb.barplot(data=pFiveWinPerc, x=100 * pFiveWinPerc['Win %'], y=pFiveWinPerc['Year and Division'], ax=ax1, palette=sb.color_palette())
     ax1.set_ylabel('Year Conference and Division')
     ax1.set_title('Win Percentage of Divisions (Power Five)')
+    ax1.set_xticks(np.linspace(0, 100, 11))
 
     # Number of wins by year by division
     sb.barplot(data=pFiveDivisions, x='Year', y='Wins', hue='Conference and Division', ax=ax2, palette=sb.color_palette())
