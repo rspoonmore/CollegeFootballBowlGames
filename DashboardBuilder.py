@@ -39,7 +39,7 @@ def createDashboard(results, conferences, divisions, plotStyle, dashboardFileNam
     print(QuadResults)
 
     PFiveResults = results[results['Team Power Five'] == 'Power Five']
-    # PFiveWinners = PFiveResults[PFiveResults['Win']]
+    winners = results[results['Win']]
     # PFiveLosers = PFiveResults[~PFiveResults['Win']]
 
     fig = plt.figure(figsize=(30, 30))
@@ -100,10 +100,22 @@ def createDashboard(results, conferences, divisions, plotStyle, dashboardFileNam
     ax5.pie(totalConferenceWins['Wins'], labels=totalConferenceWins['Conference'], autopct='%1.1f%%')
     ax5.set_title('Percent of Wins by Conference')
 
-    # Win Pie Chart
-    totalPFiveConferenceWins = conferences[conferences['Power Five'] == 'Power Five'].groupby('Conference').agg({'Wins': 'sum'}).reset_index('Conference')
-    ax6.pie(totalPFiveConferenceWins['Wins'], labels=totalPFiveConferenceWins['Conference'], autopct='%1.1f%%')
-    ax6.set_title('Percent of Wins by Conference (Power Five)')
+    # Win Pie Chart for Power Five
+    # totalPFiveConferenceWins = conferences[conferences['Power Five'] == 'Power Five'].groupby('Conference').agg({'Wins': 'sum'}).reset_index('Conference')
+    # ax6.pie(totalPFiveConferenceWins['Wins'], labels=totalPFiveConferenceWins['Conference'], autopct='%1.1f%%')
+    # ax6.set_title('Percent of Wins by Conference (Power Five)')
+
+    # Win % by Points and Yards
+    percWinDict = {}
+    for i in range(0, max(max(winners['Team Points']),max(winners['Team Yards'])/10), 3):
+        percWinDict[i] = [100.0 * len(winners[winners['Team Points'] <= i]) / len(winners), 100.0 * len(winners[winners['Team Yards'] <= i * 10]) / len(winners)]
+
+    percWinDF = pd.DataFrame.from_dict(percWinDict, columns=['Points', '10x Yards'], orient='index')
+    sb.lineplot(data=percWinDF, ax=ax6)
+    ax6.set_title('Winning Percentage by Points Scored and Yards Earned')
+    ax6.set_ylabel('Win Percentage')
+    # ax6.grid(which='both', linewidth=1)
+
 
     # Win % Heatmap
     conferenceWinPercByYear = pd.pivot_table(conferences, values=['Win %'], index=['Conference'], columns=['Year']).apply(lambda x: 100 * x).round(2)
