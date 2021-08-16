@@ -23,6 +23,8 @@ def createDashboard(results, conferences, divisions, plotStyle, dashboardFileNam
     conferences.reset_index(['Year', 'Conference'], inplace=True)
     divisions.reset_index(['Year', 'Conference', 'Division'], inplace=True)
     results['Result'] = results['Win'].apply(lambda x: 'Win' if x else 'Lose')
+    results['Win Binary'] = results['Win'].apply(lambda x: 1 if x else 0)
+    results['Team Yards / 10'] = results['Team Yards'] / 10
     results['Difference in Points'] = results['Team Points'] - results['Opponent Points']
     results['Difference in Rushing Yards'] = results['Team Rush'] - results['Opponent Rush']
     results['Difference in Passing Yards'] = results['Team Pass'] - results['Opponent Pass']
@@ -106,14 +108,12 @@ def createDashboard(results, conferences, divisions, plotStyle, dashboardFileNam
     # ax6.set_title('Percent of Wins by Conference (Power Five)')
 
     # Win % by Points and Yards
-    percWinDict = {}
-    for i in range(0, max(max(winners['Team Points']),max(winners['Team Yards'])/10), 3):
-        percWinDict[i] = [100.0 * len(winners[winners['Team Points'] <= i]) / len(winners), 100.0 * len(winners[winners['Team Yards'] <= i * 10]) / len(winners)]
-
-    percWinDF = pd.DataFrame.from_dict(percWinDict, columns=['Points', '10x Yards'], orient='index')
-    sb.lineplot(data=percWinDF, ax=ax6)
-    ax6.set_title('Winning Percentage by Points Scored and Yards Earned')
-    ax6.set_ylabel('Win Percentage')
+    sb.regplot(x='Team Points', y='Win Binary', data=results, logistic=True, y_jitter=.03, ci=False, ax=ax6, color='royalblue', label='Points')
+    sb.regplot(x='Team Yards / 10', y='Win Binary', data=results, logistic=True, y_jitter=.03, ci=False, ax=ax6, color='darkorange', label='Yards / 10')
+    ax6.legend(loc='center right')
+    ax6.set_title('Likelihood to Win by Points Scored and Yards Earned / 10')
+    ax6.set_xlabel('Points or Yards / 10')
+    ax6.set_ylabel('Likelihood to Win')
     # ax6.grid(which='both', linewidth=1)
 
 
